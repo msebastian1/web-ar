@@ -1,15 +1,3 @@
-window.onload = () => {
-    let places = staticLoadPlaces();
-    navigator.geolocation.getCurrentPosition((position) => {
-        document
-            .querySelector("a-entity")
-            .setAttribute(
-                "gps-entity-place",
-                `latitude: ${position.coords.latitude}; longitude: ${position.coords.longitude};`
-            );
-    });
-    renderPlaces(places);
-};
 
 window.onload = () => {
     const button = document.querySelector('button[data-action="change"]');
@@ -25,8 +13,8 @@ function staticLoadPlaces() {
             name: 'Pokèmon',
             location: {
                 // decomment the following and add coordinates:
-                lat: 0,
-                lng: 0,
+                lat: "45.594520018567955",
+                lng: "25.467343398404843",
             },
         },
     ];
