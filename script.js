@@ -1,100 +1,99 @@
 window.onload = () => {
-    const scene = document.querySelector('a-scene');
+    let places = staticLoadPlaces();
+    navigator.geolocation.getCurrentPosition((position) => {
+        document
+            .querySelector("a-entity")
+            .setAttribute(
+                "gps-entity-place",
+                `latitude: ${position.coords.latitude}; longitude: ${position.coords.longitude};`
+            );
+    });
+    renderPlaces(places);
+};
 
-    // first get current user location
-    return navigator.geolocation.getCurrentPosition(function (position) {
+window.onload = () => {
+    const button = document.querySelector('button[data-action="change"]');
+    button.innerText = '﹖';
 
-        // than use it to load from remote APIs some places nearby
-        loadPlaces(position.coords)
-            .then((places) => {
-                places.forEach((place) => {
-                    const latitude = place.location.lat;
-                    const longitude = place.location.lng;
-
-                    // add place name
-                    const placeText = document.createElement('a-link');
-                    placeText.setAttribute('gps-entity-place', `latitude: ${latitude}; longitude: ${longitude};`);
-                    placeText.setAttribute('title', place.name);
-                    placeText.setAttribute('scale', '15 15 15');
-
-                    placeText.addEventListener('loaded', () => {
-                        window.dispatchEvent(new CustomEvent('gps-entity-place-loaded'))
-                    });
-
-                    scene.appendChild(placeText);
-                });
-            })
-    },
-        (err) => console.error('Error in retrieving position', err),
-        {
-            enableHighAccuracy: true,
-            maximumAge: 0,
-            timeout: 27000,
-        }
-    );
+    let places = staticLoadPlaces();
+    renderPlaces(places);
 };
 
 function staticLoadPlaces() {
-    const corsProxy = 'https://cors-anywhere.herokuapp.com/';
     return [
         {
-            name: 'Magnemite',
+            name: 'Pokèmon',
             location: {
-                lat: 44.496470,
-                lng: 11.320180,
-            }
+                // decomment the following and add coordinates:
+                lat: 0,
+                lng: 0,
+            },
         },
     ];
 }
 
-function loadPlaces(position) {
-    const params = {
-        radius: 300,    // search places not farther than this value (in meters)
-        clientId: process.env.FOURSQUARE_CLIENT,
-        clientSecret: process.env.FOURSQUARE_SECRET,
-        version: '20300101',    // foursquare versioning, required but unuseful for this demo
-    };
+var models = [
+    {
+        url: './assets/magnemite/scene.gltf',
+        scale: '0.5 0.5 0.5',
+        info: 'Magnemite, Lv. 5, HP 10/10',
+        rotation: '0 180 0',
+    },
+    {
+        url: './assets/articuno/scene.gltf',
+        scale: '0.2 0.2 0.2',
+        rotation: '0 180 0',
+        info: 'Articuno, Lv. 80, HP 100/100',
+    },
+    {
+        url: './assets/dragonite/scene.gltf',
+        scale: '0.08 0.08 0.08',
+        rotation: '0 180 0',
+        info: 'Dragonite, Lv. 99, HP 150/150',
+    },
+];
 
-    // CORS Proxy to avoid CORS problems
-    const corsProxy = 'https://cors-anywhere.herokuapp.com/';
+var modelIndex = 0;
+var setModel = function (model, entity) {
+    if (model.scale) {
+        entity.setAttribute('scale', model.scale);
+    }
 
-    // Foursquare API (limit param: number of maximum places to fetch)
-    const endpoint = `${corsProxy}https://api.foursquare.com/v2/venues/search?intent=checkin
-        &ll=${position.latitude},${position.longitude}
-        &radius=${params.radius}
-        &client_id=${params.clientId}
-        &client_secret=${params.clientSecret}
-        &limit=30 
-        &v=${params.version}`;
-    return fetch(endpoint)
-        .then((res) => {
-            return res.json()
-                .then((resp) => {
-                    return resp.response.venues;
-                })
-        })
-        .catch((err) => {
-            console.error('Error with places API', err);
+    if (model.rotation) {
+        entity.setAttribute('rotation', model.rotation);
+    }
 
+    if (model.position) {
+        entity.setAttribute('position', model.position);
+    }
 
-            function renderPlaces(places) {
-                let scene = document.querySelector('a-scene');
+    entity.setAttribute('gltf-model', model.url);
 
-                places.forEach((place) => {
-                    let latitude = place.location.lat;
-                    let longitude = place.location.lng;
+    const div = document.querySelector('.instructions');
+    div.innerText = model.info;
+};
 
-                    let model = document.createElement('a-entity');
-                    model.setAttribute('gps-entity-place', `latitude: ${latitude}; longitude: ${longitude};`);
-                    model.setAttribute('gltf-model', './assets/magnemite/scene.gltf');
-                    model.setAttribute('rotation', '0 180 0');
-                    model.setAttribute('animation-mixer', '');
-                    model.setAttribute('scale', '0.5 0.5 0.5');
+function renderPlaces(places) {
+    let scene = document.querySelector('a-scene');
 
-                    model.addEventListener('loaded', () => {
-                        window.dispatchEvent(new CustomEvent('gps-entity-place-loaded'))
-                    });
+    places.forEach((place) => {
+        let latitude = place.location.lat;
+        let longitude = place.location.lng;
 
-                    scene.appendChild(model);
-                });
-            }
+        let model = document.createElement('a-entity');
+        model.setAttribute('gps-entity-place', `latitude: ${latitude}; longitude: ${longitude};`);
+
+        setModel(models[modelIndex], model);
+
+        model.setAttribute('animation-mixer', '');
+
+        document.querySelector('button[data-action="change"]').addEventListener('click', function () {
+            var entity = document.querySelector('[gps-entity-place]');
+            modelIndex++;
+            var newIndex = modelIndex % models.length;
+            setModel(models[newIndex], entity);
+        });
+
+        scene.appendChild(model);
+    });
+}
