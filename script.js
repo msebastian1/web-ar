@@ -8,13 +8,19 @@ window.onload = () => {
 };
 
 function staticLoadPlaces() {
+    let lng = 0;
+    let lat = 0;
+    navigator.geolocation.getCurrentPosition((position) => {
+        lat = position.coords.latitude;
+        lng = position.coords.longitude
+    });
     return [
         {
             name: 'Pokèmon',
             location: {
                 // decomment the following and add coordinates:
-                lat: "45.594520018567955",
-                lng: "25.467343398404843",
+                lat,
+                lng,
             },
         },
     ];
